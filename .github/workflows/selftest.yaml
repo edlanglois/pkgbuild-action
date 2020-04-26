@@ -34,7 +34,7 @@ jobs:
       uses: ./  # In self-test we're runinng the action from the same repository
       with:
         # Arguments to makepkg
-        args: --nocheck --noarchive
+        makepkgArgs: --nocheck --noarchive
     - name: Print Packages
       run: |
         echo "We don't create any package archives this time"
