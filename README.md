@@ -10,7 +10,7 @@ GitHub action to build and check a PKGBUILD package
 
 ## Interface
 Inputs:
-* `args`: Arguments to pass to `makepkg`
+* `makepkgArgs`: Additional arguments to pass to `makepkg`.
 
 Outputs:
 * `pkgfileN`: Filename of Nth built package archive (ordered as `makepkg --packagelist`).
