@@ -12,7 +12,7 @@ pacman -Syu --noconfirm base-devel
 # Run as `nobody` and give full access to these files
 chmod -R a+rw .
 
-# When installing dependencines, makepkg will use sudo
+# When installing dependencies, makepkg will use sudo
 # Give user `nobody` passwordless sudo access
 echo "nobody ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
