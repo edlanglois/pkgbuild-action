@@ -5,7 +5,7 @@ branding:
   color: blue
   icon: chevron-up
 inputs:
-  args:
+  makepkgArgs:
     description: "Additional arguments to pass to makepkg."
     required: false
     default: ""
@@ -18,4 +18,4 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.args }}
+    - ${{ inputs.makepkgArgs }}
