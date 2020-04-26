@@ -1,0 +1,43 @@
+name: Self Test
+
+on: [push]
+
+jobs:
+  pkgbuild:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./  # In self-test we're runinng the action from the same repository
+    - name: Print Package Files
+      run: |
+        echo "This PKGBUILD file creates two packages"
+        echo "Package 0: ${{ steps.makepkg.outputs.pkgfile0 }}"
+        echo "Package 1: ${{ steps.makepkg.outputs.pkgfile1 }}"
+        echo "Package 2: ${{ steps.makepkg.outputs.pkgfile2 }}"
+    - name: Upload Package Archive
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ steps.makepkg.outputs.pkgfile0 }}
+        path: ${{ steps.makepkg.outputs.pkgfile0 }}
+
+  # Test passing arguments to makepkg
+  pkgbuild-nocheck-noarchive:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./  # In self-test we're runinng the action from the same repository
+      with:
+        # Arguments to makepkg
+        args: --nocheck --noarchive
+    - name: Print Packages
+      run: |
+        echo "We don't create any package archives this time"
+        echo "Package 0: ${{ steps.makepkg.outputs.pkgfile0 }}"
+        echo "Package 1: ${{ steps.makepkg.outputs.pkgfile1 }}"
+        echo "Package 2: ${{ steps.makepkg.outputs.pkgfile2 }}"
