@@ -10,7 +10,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Makepkg Build and Check
       id: makepkg
-      uses: ./  # In self-test we're runinng the action from the same repository
+      uses: ./
     - name: Print Package Files
       run: |
         echo "This PKGBUILD file creates two packages"
@@ -31,7 +31,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Makepkg Build and Check
       id: makepkg
-      uses: ./  # In self-test we're runinng the action from the same repository
+      uses: ./
       with:
         # Arguments to makepkg
         makepkgArgs: --nocheck --noarchive
@@ -41,3 +41,28 @@ jobs:
         echo "Package 0: ${{ steps.makepkg.outputs.pkgfile0 }}"
         echo "Package 1: ${{ steps.makepkg.outputs.pkgfile1 }}"
         echo "Package 2: ${{ steps.makepkg.outputs.pkgfile2 }}"
+
+  # Test disable namcap
+  pkgbuild-namcapdisable:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        # Arguments to makepkg
+        namcapDisable: 1
+
+  # Test the namcapExcludeRules argument
+  pkgbuild-namcapexcluderules:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        namcapExcludeRules: "licensepkg"
