@@ -17,3 +17,30 @@ Inputs:
 Outputs:
 * `pkgfileN`: Filename of Nth built package archive (ordered as `makepkg --packagelist`).
    Empty if not built. N = 0, 1, ...
+
+## Example Usage
+```yaml
+name: PKGBUILD CI
+
+on: [push, pull_request]
+
+jobs:
+  pkgbuild:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: edlanglois/pkgbuild-action@v1.0.1
+    - name: Print Package Files
+      run: |
+        echo "Successfully created the following package archive"
+        echo "Package: ${{ steps.makepkg.outputs.pkgfile0 }}"
+    # Uncomment to upload the package as an artifact
+    # - name: Upload Package Archive
+    #   uses: actions/upload-artifact@v1
+    #   with:
+    #     name: ${{ steps.makepkg.outputs.pkgfile0 }}
+    #     path: ${{ steps.makepkg.outputs.pkgfile0 }}
+```
