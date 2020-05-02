@@ -61,6 +61,9 @@ function namcap_check() {
 	if [ -n "${INPUT_NAMCAPRULES:-}" ]; then
 		NAMCAP_ARGS+=( "-r" "${INPUT_NAMCAPRULES}" )
 	fi
+	if [ -n "${INPUT_NAMCAPEXCLUDERULES:-}" ]; then
+		NAMCAP_ARGS+=( "-e" "${INPUT_NAMCAPEXCLUDERULES}" )
+	fi
 
 	namcap "${NAMCAP_ARGS[@]}" PKGBUILD \
 		| prepend "::warning file=$FILE,line=$LINENO::"
