@@ -5,6 +5,14 @@ branding:
   color: blue
   icon: chevron-up
 inputs:
+  namcapDisable:
+    description: "Disable namcap checks if nonempty."
+    required: false
+    default: ""
+  namcapRules:
+    description: "A comma-separated list of rules for namcap to run."
+    required: false
+    default: ""
   makepkgArgs:
     description: "Additional arguments to pass to makepkg."
     required: false

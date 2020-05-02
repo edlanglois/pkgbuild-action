@@ -51,10 +51,6 @@ function prepend () {
 	done
 }
 
-# namcap_check is set up to be configured with environment variables
-# but I haven't figured how how to pass those into the docker container.
-# TODO: Either pass in environment variables or use args instead.
-
 function namcap_check() {
 	# Run namcap checks
 	# Installing namcap after building so that makepkg happens on a minimal
@@ -62,8 +58,8 @@ function namcap_check() {
 	pacman -S --noconfirm namcap
 
 	NAMCAP_ARGS=()
-	if [ -n "${NAMCAP_RULES:-}" ]; then
-		NAMCAP_ARGS+=( "-r" "${NAMCAP_RULES}" )
+	if [ -n "${INPUT_NAMCAPRULES:-}" ]; then
+		NAMCAP_ARGS+=( "-r" "${INPUT_NAMCAPRULES}" )
 	fi
 
 	namcap "${NAMCAP_ARGS[@]}" PKGBUILD \
@@ -71,12 +67,12 @@ function namcap_check() {
 	for PKGFILE in "${PKGFILES[@]}"; do
 		if [ -f "$PKGFILE" ]; then
 			RELPKGFILE="$(realpath --relative-base="$PWD" "$PKGFILE")"
-			namcap "${NAMCAP_ARGS[@]}" "$PKGFILE" \
+			namcap -i "${NAMCAP_ARGS[@]}" "$PKGFILE" \
 				| prepend "::warning file=$FILE,line=$LINENO::$RELPKGFILE:"
 		fi
 	done
 }
 
-if [ -z "${NAMCAP_DISABLE:-}" ]; then
+if [ -z "${INPUT_NAMCAPDISABLE:-}" ]; then
 	namcap_check
 fi
