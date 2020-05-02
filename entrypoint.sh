@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Arguments are passed through to makepkg, so it's possible
-# to disable checks, building, etc.
-
 FILE="$(basename "$0")"
 
 pacman -Syu --noconfirm base-devel
@@ -28,7 +25,9 @@ mapfile -t PKGFILES < <( sudo -u nobody makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
 # Build packages
-sudo -u nobody makepkg --syncdeps --noconfirm "$@"
+# INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
+# shellcheck disable=SC2086
+sudo -u nobody makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 
 # Report built package archives
 i=0
