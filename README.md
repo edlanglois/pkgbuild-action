@@ -33,7 +33,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Makepkg Build and Check
       id: makepkg
-      uses: edlanglois/pkgbuild-action@v1.0.1
+      uses: edlanglois/pkgbuild-action@v1
     - name: Print Package Files
       run: |
         echo "Successfully created the following package archive"
