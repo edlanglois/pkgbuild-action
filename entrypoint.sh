@@ -1,34 +1,53 @@
 #!/bin/bash
 set -euo pipefail
 
-# Arguments are passed through to makepkg, so it's possible
-# to disable checks, building, etc.
-
 FILE="$(basename "$0")"
 
 pacman -Syu --noconfirm base-devel
 
 # Makepkg does not allow running as root
-# Run as `nobody` and give full access to these files
-chmod -R a+rw .
-
+# Create a new user `builder`
+# `builder` needs to have a home directory because some PKGBUILDs will try to
+# write to it (e.g. for cache)
+useradd builder -m
 # When installing dependencies, makepkg will use sudo
-# Give user `nobody` passwordless sudo access
-echo "nobody ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# Give user `builder` passwordless sudo access
+echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Give all users (particularly builder) full access to these files
+chmod -R a+rw .
 
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
 # AUR checks that .SRCINFO exists so a missing file can't go unnoticed.
-if [ -f .SRCINFO ] && ! sudo -u nobody makepkg --printsrcinfo | diff - .SRCINFO; then
+if [ -f .SRCINFO ] && ! sudo -u builder makepkg --printsrcinfo | diff - .SRCINFO; then
 	echo "::error file=$FILE,line=$LINENO::Mismatched .SRCINFO. Update with: makepkg --printsrcinfo > .SRCINFO"
 	exit 1
 fi
 
 # Get array of packages to be built
-mapfile -t PKGFILES < <( sudo -u nobody makepkg --packagelist )
+mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
+# Optionally install dependencies from AUR
+if [ -n "${INPUT_AURDEPS:-}" ]; then
+	# First install yay
+	pacman -S --noconfirm git
+	git clone https://aur.archlinux.org/yay.git /tmp/yay
+	pushd /tmp/yay
+	chmod -R a+rw .
+	sudo -H -u builder makepkg --syncdeps --install --noconfirm
+	popd
+
+	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
+	mapfile -t PKGDEPS < \
+		<(sed -n -e 's/^[[:space:]]*depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\2/p' .SRCINFO)
+	yay --sync --noconfirm "${PKGDEPS[@]}"
+fi
+
 # Build packages
-sudo -u nobody makepkg --syncdeps --noconfirm "$@"
+# INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
+# shellcheck disable=SC2086
+sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 
 # Report built package archives
 i=0
@@ -51,10 +70,6 @@ function prepend () {
 	done
 }
 
-# namcap_check is set up to be configured with environment variables
-# but I haven't figured how how to pass those into the docker container.
-# TODO: Either pass in environment variables or use args instead.
-
 function namcap_check() {
 	# Run namcap checks
 	# Installing namcap after building so that makepkg happens on a minimal
@@ -62,8 +77,11 @@ function namcap_check() {
 	pacman -S --noconfirm namcap
 
 	NAMCAP_ARGS=()
-	if [ -n "${NAMCAP_RULES:-}" ]; then
-		NAMCAP_ARGS+=( "-r" "${NAMCAP_RULES}" )
+	if [ -n "${INPUT_NAMCAPRULES:-}" ]; then
+		NAMCAP_ARGS+=( "-r" "${INPUT_NAMCAPRULES}" )
+	fi
+	if [ -n "${INPUT_NAMCAPEXCLUDERULES:-}" ]; then
+		NAMCAP_ARGS+=( "-e" "${INPUT_NAMCAPEXCLUDERULES}" )
 	fi
 
 	namcap "${NAMCAP_ARGS[@]}" PKGBUILD \
@@ -77,6 +95,6 @@ function namcap_check() {
 	done
 }
 
-if [ -z "${NAMCAP_DISABLE:-}" ]; then
+if [ -z "${INPUT_NAMCAPDISABLE:-}" ]; then
 	namcap_check
 fi
