@@ -12,6 +12,9 @@ GitHub action to build and check a PKGBUILD package
 
 ## Interface
 Inputs:
+* `namcapDisable`: Disable namcap checks if nonempty.
+* `namcapRules`: A comma-separated list of rules for namcap to run.
+* `namcapExcludeRules`: A comma-separated list of rules for namcap not to run.
 * `makepkgArgs`: Additional arguments to pass to `makepkg`.
 
 Outputs:
@@ -32,7 +35,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Makepkg Build and Check
       id: makepkg
-      uses: edlanglois/pkgbuild-action@v1.0.1
+      uses: edlanglois/pkgbuild-action@v1
     - name: Print Package Files
       run: |
         echo "Successfully created the following package archive"

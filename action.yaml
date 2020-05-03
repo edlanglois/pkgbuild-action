@@ -21,6 +21,10 @@ inputs:
     description: "Additional arguments to pass to makepkg."
     required: false
     default: ""
+  yay:
+    description: "Install dependencies with yay if nonempty. Required for AUR dependencies."
+    required: false
+    default: ""
 outputs:
   pkgfile0:
     description: "Filename of the first generated package archive. Usually only one."

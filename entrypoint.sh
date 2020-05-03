@@ -24,6 +24,21 @@ fi
 mapfile -t PKGFILES < <( sudo -u nobody makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
+# Optionally install dependencies with yay
+if [ -n "${INPUT_YAY:-}" ]; then
+	# First install yay
+	pacman -S --noconfirm git
+	git clone https://aur.archlinux.org/yay.git /tmp/yay
+	pushd /tmp/yay
+	chmod -R a+rw .
+	sudo -u nobody makepkg --syncdeps --install --noconfirm
+	popd
+
+	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
+	sed -n -e 's/^[[:space:]]*depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\2/p' .SRCINFO | \
+		yay --sync --noconfirm -
+fi
+
 # Build packages
 # INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
 # shellcheck disable=SC2086
@@ -69,7 +84,7 @@ function namcap_check() {
 	for PKGFILE in "${PKGFILES[@]}"; do
 		if [ -f "$PKGFILE" ]; then
 			RELPKGFILE="$(realpath --relative-base="$PWD" "$PKGFILE")"
-			namcap -i "${NAMCAP_ARGS[@]}" "$PKGFILE" \
+			namcap "${NAMCAP_ARGS[@]}" "$PKGFILE" \
 				| prepend "::warning file=$FILE,line=$LINENO::$RELPKGFILE:"
 		fi
 	done
