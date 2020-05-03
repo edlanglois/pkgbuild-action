@@ -12,6 +12,7 @@ GitHub action to build and check a PKGBUILD package
 
 ## Interface
 Inputs:
+* `aurDeps`: Support AUR dependencies if nonempty.
 * `namcapDisable`: Disable namcap checks if nonempty.
 * `namcapRules`: A comma-separated list of rules for namcap to run.
 * `namcapExcludeRules`: A comma-separated list of rules for namcap not to run.
