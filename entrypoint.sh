@@ -28,8 +28,8 @@ fi
 mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
-# Optionally install dependencies with yay
-if [ -n "${INPUT_YAY:-}" ]; then
+# Optionally install dependencies from AUR
+if [ -n "${INPUT_AURDEPS:-}" ]; then
 	# First install yay
 	pacman -S --noconfirm git
 	git clone https://aur.archlinux.org/yay.git /tmp/yay
