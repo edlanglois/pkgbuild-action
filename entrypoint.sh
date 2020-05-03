@@ -69,7 +69,7 @@ function namcap_check() {
 	for PKGFILE in "${PKGFILES[@]}"; do
 		if [ -f "$PKGFILE" ]; then
 			RELPKGFILE="$(realpath --relative-base="$PWD" "$PKGFILE")"
-			namcap -i "${NAMCAP_ARGS[@]}" "$PKGFILE" \
+			namcap "${NAMCAP_ARGS[@]}" "$PKGFILE" \
 				| prepend "::warning file=$FILE,line=$LINENO::$RELPKGFILE:"
 		fi
 	done
