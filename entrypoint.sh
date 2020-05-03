@@ -39,8 +39,9 @@ if [ -n "${INPUT_YAY:-}" ]; then
 	popd
 
 	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
-	sed -n -e 's/^[[:space:]]*depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\2/p' .SRCINFO | \
-		yay --sync --noconfirm -
+	mapfile -t PKGDEPS < \
+		<(sed -n -e 's/^[[:space:]]*depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\2/p' .SRCINFO)
+	yay --sync --noconfirm "${PKGDEPS[@]}"
 fi
 
 # Build packages
