@@ -67,8 +67,8 @@ jobs:
       with:
         namcapExcludeRules: "licensepkg"
 
-  # Test installing dependencies with yay
-  pkgbuild-yay:
+  # Test installing dependencies including AUR
+  pkgbuild-aurdeps:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -77,4 +77,4 @@ jobs:
       id: makepkg
       uses: ./
       with:
-        yay: "1"
+        aurDeps: "1"
