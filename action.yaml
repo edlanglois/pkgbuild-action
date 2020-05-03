@@ -5,6 +5,10 @@ branding:
   color: blue
   icon: chevron-up
 inputs:
+  aurDeps:
+    description: "Support AUR dependencies if nonempty."
+    required: false
+    default: ""
   namcapDisable:
     description: "Disable namcap checks if nonempty."
     required: false
@@ -19,10 +23,6 @@ inputs:
     default: ""
   makepkgArgs:
     description: "Additional arguments to pass to makepkg."
-    required: false
-    default: ""
-  yay:
-    description: "Install dependencies with yay if nonempty. Required for AUR dependencies."
     required: false
     default: ""
 outputs:
