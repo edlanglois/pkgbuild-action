@@ -66,3 +66,15 @@ jobs:
       uses: ./
       with:
         namcapExcludeRules: "licensepkg"
+
+  # Test installing dependencies with yay
+  pkgbuild-yay:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        yay: "1"
