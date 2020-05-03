@@ -6,22 +6,26 @@ FILE="$(basename "$0")"
 pacman -Syu --noconfirm base-devel
 
 # Makepkg does not allow running as root
-# Run as `nobody` and give full access to these files
-chmod -R a+rw .
-
+# Create a new user `builder`
+# `builder` needs to have a home directory because some PKGBUILDs will try to
+# write to it (e.g. for cache)
+useradd builder -m
 # When installing dependencies, makepkg will use sudo
-# Give user `nobody` passwordless sudo access
-echo "nobody ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# Give user `builder` passwordless sudo access
+echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Give all users (particularly builder) full access to these files
+chmod -R a+rw .
 
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
 # AUR checks that .SRCINFO exists so a missing file can't go unnoticed.
-if [ -f .SRCINFO ] && ! sudo -u nobody makepkg --printsrcinfo | diff - .SRCINFO; then
+if [ -f .SRCINFO ] && ! sudo -u builder makepkg --printsrcinfo | diff - .SRCINFO; then
 	echo "::error file=$FILE,line=$LINENO::Mismatched .SRCINFO. Update with: makepkg --printsrcinfo > .SRCINFO"
 	exit 1
 fi
 
 # Get array of packages to be built
-mapfile -t PKGFILES < <( sudo -u nobody makepkg --packagelist )
+mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
 # Optionally install dependencies with yay
@@ -31,7 +35,7 @@ if [ -n "${INPUT_YAY:-}" ]; then
 	git clone https://aur.archlinux.org/yay.git /tmp/yay
 	pushd /tmp/yay
 	chmod -R a+rw .
-	sudo -u nobody makepkg --syncdeps --install --noconfirm
+	sudo -H -u builder makepkg --syncdeps --install --noconfirm
 	popd
 
 	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
@@ -42,7 +46,7 @@ fi
 # Build packages
 # INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
 # shellcheck disable=SC2086
-sudo -u nobody makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
+sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 
 # Report built package archives
 i=0
