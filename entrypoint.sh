@@ -11,9 +11,6 @@ EOM
 
 pacman -Syu --noconfirm base-devel
 
-# XXX test that multilib works
-pacman -S --noconfirm lib32-readline
-
 # Makepkg does not allow running as root
 # Create a new user `builder`
 # `builder` needs to have a home directory because some PKGBUILDs will try to
