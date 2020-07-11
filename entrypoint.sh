@@ -3,6 +3,12 @@ set -euo pipefail
 
 FILE="$(basename "$0")"
 
+# Enable the multilib repository
+cat << EOM >> /etc/pacman.conf
+[multilib]
+Include = /etc/pacman.d/mirrorlist
+EOM
+
 pacman -Syu --noconfirm base-devel
 
 # Makepkg does not allow running as root
