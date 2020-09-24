@@ -43,8 +43,7 @@ jobs:
         echo "Package: ${{ steps.makepkg.outputs.pkgfile0 }}"
     # Uncomment to upload the package as an artifact
     # - name: Upload Package Archive
-    #   uses: actions/upload-artifact@v1
+    #   uses: actions/upload-artifact@v2
     #   with:
-    #     name: ${{ steps.makepkg.outputs.pkgfile0 }}
     #     path: ${{ steps.makepkg.outputs.pkgfile0 }}
 ```
