@@ -12,6 +12,8 @@ GitHub action to build and check a PKGBUILD package
 
 ## Interface
 Inputs:
+* `pkgdir`: Relative path to directory containing the PKGBUILD file
+            (repo root by default).
 * `aurDeps`: Support AUR dependencies if nonempty.
 * `namcapDisable`: Disable namcap checks if nonempty.
 * `namcapRules`: A comma-separated list of rules for namcap to run.

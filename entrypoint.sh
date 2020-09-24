@@ -23,6 +23,9 @@ echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 # Give all users (particularly builder) full access to these files
 chmod -R a+rw .
 
+BASEDIR="$PWD"
+cd "${INPUT_PKGDIR:-.}"
+
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
 # AUR checks that .SRCINFO exists so a missing file can't go unnoticed.
 if [ -f .SRCINFO ] && ! sudo -u builder makepkg --printsrcinfo | diff - .SRCINFO; then
@@ -59,7 +62,7 @@ sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 i=0
 for PKGFILE in "${PKGFILES[@]}"; do
 	# makepkg reports absolute paths, must be relative for use by other actions
-	RELPKGFILE="$(realpath --relative-base="$PWD" "$PKGFILE")"
+	RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 	# Caller arguments to makepkg may mean the pacakge is not built
 	if [ -f "$PKGFILE" ]; then
 		echo "::set-output name=pkgfile$i::$RELPKGFILE"
@@ -94,7 +97,7 @@ function namcap_check() {
 		| prepend "::warning file=$FILE,line=$LINENO::"
 	for PKGFILE in "${PKGFILES[@]}"; do
 		if [ -f "$PKGFILE" ]; then
-			RELPKGFILE="$(realpath --relative-base="$PWD" "$PKGFILE")"
+			RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 			namcap "${NAMCAP_ARGS[@]}" "$PKGFILE" \
 				| prepend "::warning file=$FILE,line=$LINENO::$RELPKGFILE:"
 		fi
