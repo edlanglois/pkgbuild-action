@@ -9,7 +9,7 @@ cat << EOM >> /etc/pacman.conf
 Include = /etc/pacman.d/mirrorlist
 EOM
 
-pacman -Syu --noconfirm base-devel
+pacman -Syu --noconfirm --needed base-devel
 
 # Makepkg does not allow running as root
 # Create a new user `builder`
@@ -40,7 +40,7 @@ echo "Package(s): ${PKGFILES[*]}"
 # Optionally install dependencies from AUR
 if [ -n "${INPUT_AURDEPS:-}" ]; then
 	# First install yay
-	pacman -S --noconfirm git
+	pacman -S --noconfirm --needed git
 	git clone https://aur.archlinux.org/yay.git /tmp/yay
 	pushd /tmp/yay
 	chmod -R a+rw .
@@ -83,7 +83,7 @@ function namcap_check() {
 	# Run namcap checks
 	# Installing namcap after building so that makepkg happens on a minimal
 	# install where any missing dependencies can be caught.
-	pacman -S --noconfirm namcap
+	pacman -S --noconfirm --needed namcap
 
 	NAMCAP_ARGS=()
 	if [ -n "${INPUT_NAMCAPRULES:-}" ]; then
