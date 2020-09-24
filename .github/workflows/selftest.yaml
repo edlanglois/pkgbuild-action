@@ -18,9 +18,8 @@ jobs:
         echo "Package 1: ${{ steps.makepkg.outputs.pkgfile1 }}"
         echo "Package 2: ${{ steps.makepkg.outputs.pkgfile2 }}"
     - name: Upload Package Archive
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
-        name: ${{ steps.makepkg.outputs.pkgfile0 }}
         path: ${{ steps.makepkg.outputs.pkgfile0 }}
 
   # Test passing arguments to makepkg
