@@ -5,6 +5,10 @@ branding:
   color: blue
   icon: chevron-up
 inputs:
+  pkgdir:
+    description: "Relative path to directory containing the PKGBUILD file."
+    required: false
+    default: "."
   aurDeps:
     description: "Support AUR dependencies if nonempty."
     required: false
