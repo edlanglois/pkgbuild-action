@@ -77,3 +77,22 @@ jobs:
       uses: ./
       with:
         aurDeps: "1"
+
+  # Test a package in a subdirectory
+  pkgbuild-bonjour:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: "[Bonjour] Makepkg Build and Check"
+      id: makepkg
+      uses: ./
+      with:
+        pkgdir: "bonjour"
+    - name: Print Package Files
+      run: |
+        echo "Package: ${{ steps.makepkg.outputs.pkgfile0 }}"
+    - name: Upload Package Archive
+      uses: actions/upload-artifact@v2
+      with:
+        path: ${{ steps.makepkg.outputs.pkgfile0 }}
