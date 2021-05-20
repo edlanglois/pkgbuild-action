@@ -49,7 +49,7 @@ if [ -n "${INPUT_AURDEPS:-}" ]; then
 
 	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
 	mapfile -t PKGDEPS < \
-		<(sed -n -e 's/^[[:space:]]*depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\2/p' .SRCINFO)
+		<(sed -n -e 's/^[[:space:]]*\(make\)\?depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\3/p' .SRCINFO)
 	sudo -H -u builder yay --sync --noconfirm "${PKGDEPS[@]}"
 fi
 
