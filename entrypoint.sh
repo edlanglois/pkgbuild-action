@@ -29,7 +29,7 @@ cd "${INPUT_PKGDIR:-.}"
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
 # AUR checks that .SRCINFO exists so a missing file can't go unnoticed.
 sudo -u builder makepkg --printsrcinfo > .SRCINFO.expected
-if [ -f .SRCINFO ] && ! diff .SRCINFO.expected .SRCINFO; then
+if [ -f .SRCINFO ] && ! diff -u --color=always .SRCINFO.expected .SRCINFO; then
 	echo "::error file=$FILE,line=$LINENO::Mismatched .SRCINFO. Update with: makepkg --printsrcinfo > .SRCINFO"
 	exit 1
 fi
