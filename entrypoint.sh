@@ -9,6 +9,14 @@ cat << EOM >> /etc/pacman.conf
 Include = /etc/pacman.d/mirrorlist
 EOM
 
+# Add alerque repository for paru
+cat << EOM >> /etc/pacman.conf
+[alerque]
+SigLevel = Optional TrustAll
+Server = https://arch.alerque.com/\$arch
+EOM
+pacman-key --recv-keys 63CC496475267693
+
 pacman -Syu --noconfirm --needed base-devel
 
 # Makepkg does not allow running as root
@@ -35,13 +43,13 @@ fi
 
 # Optionally install dependencies from AUR
 if [ -n "${INPUT_AURDEPS:-}" ]; then
-	# First install yay
-	pacman -Syu --noconfirm yay
+	# First install paru
+	pacman -Syu --noconfirm paru
 
 	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
 	mapfile -t PKGDEPS < \
 		<(sed -n -e 's/^[[:space:]]*\(make\)\?depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\3/p' .SRCINFO)
-	sudo -H -u builder yay --sync --noconfirm "${PKGDEPS[@]}"
+	sudo -H -u builder paru --sync --noconfirm "${PKGDEPS[@]}"
 fi
 
 # Make the builder user the owner of these files
