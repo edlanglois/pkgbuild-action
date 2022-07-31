@@ -49,6 +49,12 @@ if [ -n "${INPUT_AURDEPS:-}" ]; then
 	sudo -H -u builder yay --sync --noconfirm "${PKGDEPS[@]}"
 fi
 
+# Make the builder user the owner of these files
+# Without this, (e.g. only having every user have read/write access to the files), 
+# makepkg will try to change the permissions of the files itself which will fail since it does not own the files/have permission
+# we can't do this earlier as it will change files that are for github actions, which results in warnings in github actions logs.
+chown -R builder .
+
 # Build packages
 # INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
 # shellcheck disable=SC2086
