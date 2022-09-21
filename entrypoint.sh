@@ -37,7 +37,7 @@ fi
 if [ -n "${INPUT_AURDEPS:-}" ]; then
 	# First install yay
 	pacman -S --noconfirm --needed git
-	git clone https://aur.archlinux.org/yay.git /tmp/yay
+	git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
 	pushd /tmp/yay
 	chmod -R a+rw .
 	sudo -H -u builder makepkg --syncdeps --install --noconfirm
