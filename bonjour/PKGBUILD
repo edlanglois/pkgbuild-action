@@ -1,0 +1,26 @@
+# Maintainer: Eric Langlois <eric@langlois.xyz>
+pkgname=(bonjour)
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Bonjour le Monde"
+url="http://www.example.com"
+arch=('any')
+license=('MIT')
+depends=()
+checkdepends=()
+makedepends=()
+source=(bonjour.sh)
+sha256sums=('bb8e59c8a8f1ed02d4fa12729571c45d07d8a680be2202e71fa4460f4969383d')
+
+build() {
+	cp bonjour.sh bonjour
+	chmod u+x bonjour
+}
+
+check() {
+	./bonjour
+}
+
+package() {
+	install -m755 -D "bonjour" "$pkgdir/usr/bin/bonjour"
+}

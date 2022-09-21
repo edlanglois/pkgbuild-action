@@ -1,0 +1,98 @@
+name: Self Test
+
+on: [push]
+
+jobs:
+  pkgbuild:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+    - name: Print Package Files
+      run: |
+        echo "This PKGBUILD file creates two packages"
+        echo "Package 0: ${{ steps.makepkg.outputs.pkgfile0 }}"
+        echo "Package 1: ${{ steps.makepkg.outputs.pkgfile1 }}"
+        echo "Package 2: ${{ steps.makepkg.outputs.pkgfile2 }}"
+    - name: Upload Package Archive
+      uses: actions/upload-artifact@v2
+      with:
+        path: ${{ steps.makepkg.outputs.pkgfile0 }}
+
+  # Test passing arguments to makepkg
+  pkgbuild-nocheck-noarchive:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        # Arguments to makepkg
+        makepkgArgs: --nocheck --noarchive
+    - name: Print Packages
+      run: |
+        echo "We don't create any package archives this time"
+        echo "Package 0: ${{ steps.makepkg.outputs.pkgfile0 }}"
+        echo "Package 1: ${{ steps.makepkg.outputs.pkgfile1 }}"
+        echo "Package 2: ${{ steps.makepkg.outputs.pkgfile2 }}"
+
+  # Test disable namcap
+  pkgbuild-namcapdisable:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        # Arguments to makepkg
+        namcapDisable: 1
+
+  # Test the namcapExcludeRules argument
+  pkgbuild-namcapexcluderules:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        namcapExcludeRules: "licensepkg"
+
+  # Test installing dependencies including AUR
+  pkgbuild-aurdeps:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Makepkg Build and Check
+      id: makepkg
+      uses: ./
+      with:
+        aurDeps: "1"
+
+  # Test a package in a subdirectory
+  pkgbuild-bonjour:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: "[Bonjour] Makepkg Build and Check"
+      id: makepkg
+      uses: ./
+      with:
+        pkgdir: "bonjour"
+    - name: Print Package Files
+      run: |
+        echo "Package: ${{ steps.makepkg.outputs.pkgfile0 }}"
+    - name: Upload Package Archive
+      uses: actions/upload-artifact@v2
+      with:
+        path: ${{ steps.makepkg.outputs.pkgfile0 }}

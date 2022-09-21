@@ -1,5 +1,7 @@
-# pkgbuild-action
+# pkgbuild-action - Self Test
 GitHub action to build and check a PKGBUILD package
+
+**This branch is a self-test of the action on a simple PKGBUILD file**
 
 ## Features
 * Checks that .SRCINFO matches PKGBUILD if .SRCINFO exists
