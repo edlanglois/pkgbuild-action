@@ -50,7 +50,7 @@ if [ -n "${INPUT_AURDEPS:-}" ]; then
 fi
 
 # Make the builder user the owner of these files
-# Without this, (e.g. only having every user have read/write access to the files), 
+# Without this, (e.g. only having every user have read/write access to the files),
 # makepkg will try to change the permissions of the files itself which will fail since it does not own the files/have permission
 # we can't do this earlier as it will change files that are for github actions, which results in warnings in github actions logs.
 chown -R builder .
