@@ -9,6 +9,10 @@ inputs:
     description: "Relative path to directory containing the PKGBUILD file."
     required: false
     default: "."
+  pacmanConf:
+    description: "Relative path to alternative configuration file for pacman"
+    required: false
+    default: "/etc/pacman.conf"
   aurDeps:
     description: "Support AUR dependencies if nonempty."
     required: false
@@ -29,6 +33,10 @@ inputs:
     description: "Additional arguments to pass to makepkg."
     required: false
     default: ""
+  makepkgConf:
+    description: "Relative path to alternative configuration file for makepkg"
+    required: false
+    default: "/etc/makepkg.conf"
   repoReleaseTag:
     description: "Tag to use as repository name"
     required: false

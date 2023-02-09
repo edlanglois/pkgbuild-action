@@ -17,7 +17,17 @@ Server = https://arch.alerque.com/\$arch
 EOM
 pacman-key --recv-keys 63CC496475267693
 
-pacman -Syu --noconfirm --needed base-devel curl
+if [ -n "${INPUT_PACMANCONF:-}" ]; then
+    echo "Using ${INPUT_PACMANCONF:-} as pacman.conf"
+    cp "${INPUT_PACMANCONF:-}" /etc/pacman.conf
+fi
+
+if [ -n "${INPUT_MAKEPKGCONF:-}" ]; then
+    echo "Using ${INPUT_MAKEPKGCONF:-} as makepkg.conf"
+    cp "${INPUT_MAKEPKGCONF:-}" /etc/makepkg.conf
+fi
+
+pacman -Syu --noconfirm --needed base-devel
 
 # Makepkg does not allow running as root
 # Create a new user `builder`
@@ -70,7 +80,7 @@ echo "Package(s): ${PKGFILES[*]}"
 if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
     REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
     for REPOFILE in "${REPOFILES[@]}"; do
-        curl "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE" -Of \
+        sudo -u builder curl -Lf -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE" \
             || echo "Failed to retrieve $REPOFILE. A new repo will be created."
     done
     # Delete the `<repo_name>.db` and `repo_name.files` symlinks
@@ -87,7 +97,7 @@ for PKGFILE in "${PKGFILES[@]}"; do
 		echo "::set-output name=pkgfile$i::$RELPKGFILE"
         # Optionally add the packages to a makeshift repository in GitHub releases
         if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
-            repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
+            sudo -u builder repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
         else
             echo "Skipping repository update for $RELPKGFILE"
         fi
