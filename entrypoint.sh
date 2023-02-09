@@ -17,7 +17,7 @@ Server = https://arch.alerque.com/\$arch
 EOM
 pacman-key --recv-keys 63CC496475267693
 
-pacman -Syu --noconfirm --needed base-devel
+pacman -Syu --noconfirm --needed base-devel curl
 
 # Makepkg does not allow running as root
 # Create a new user `builder`
@@ -67,6 +67,16 @@ sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+    REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+    for REPOFILE in "${REPOFILES[@]}"; do
+        curl "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE" -Of \
+            || echo "Failed to retrieve $REPOFILE. A new repo will be created."
+    done
+    # Delete the `<repo_name>.db` and `repo_name.files` symlinks
+    rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
+fi
+
 # Report built package archives
 i=0
 for PKGFILE in "${PKGFILES[@]}"; do
@@ -75,11 +85,32 @@ for PKGFILE in "${PKGFILES[@]}"; do
 	# Caller arguments to makepkg may mean the pacakge is not built
 	if [ -f "$PKGFILE" ]; then
 		echo "::set-output name=pkgfile$i::$RELPKGFILE"
+        # Optionally add the packages to a makeshift repository in GitHub releases
+        if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+            repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
+        else
+            echo "Skipping repository update for $RELPKGFILE"
+        fi
 	else
 		echo "Archive $RELPKGFILE not built"
 	fi
 	(( ++i ))
 done
+
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+    # Delete the `<repo_name>.db` and `repo_name.files` symlinks
+    rm "${INPUT_REPORELEASETAG:-}".{db,files}
+    # Copy repo archives to their suffix-less symlinks because symlinks are not uploaded to GitHub releases
+    cp "${INPUT_REPORELEASETAG:-}".db{.tar.gz,}
+    cp "${INPUT_REPORELEASETAG:-}".files{.tar.gz,}
+    REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+    j=0
+    for REPOFILE in "${REPOFILES[@]}"; do
+        RELREPOFILE="$(realpath --relative-base="$BASEDIR" "$(realpath -s "$REPOFILE")")"
+        echo "::set-output name=repofile$j::$RELREPOFILE"
+    (( ++j ))
+    done
+fi
 
 function prepend () {
 	# Prepend the argument to each input line

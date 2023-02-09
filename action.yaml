@@ -29,11 +29,23 @@ inputs:
     description: "Additional arguments to pass to makepkg."
     required: false
     default: ""
+  repoReleaseTag:
+    description: "Tag to use as repository name"
+    required: false
+    default: ""
 outputs:
   pkgfile0:
     description: "Filename of the first generated package archive. Usually only one."
   pkgfile1:
     description: "Filename of the 2nd generated package archive, etc."
+  repofile0:
+    description: "<repoReleaseTag>.db"
+  repofile1:
+    description: "<repoReleaseTag>.db.tar.gz"
+  repofile2:
+    description: "<repoReleaseTag>.files"
+  repofile3:
+    description: "<repoReleaseTag>.files.tar.gz"
 runs:
   using: 'docker'
   image: 'Dockerfile'
