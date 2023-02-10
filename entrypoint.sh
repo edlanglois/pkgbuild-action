@@ -95,6 +95,17 @@ echo "Package(s): ${PKGFILES[*]}"
 # Report built package archives
 i=0
 for PKGFILE in "${PKGFILES[@]}"; do
+    # Replace colon (:) in files name because releases don't like it
+    # It seems to not mess with pacman so it doesn't need to be guarded
+    set -x
+    srcdir="$(dirname "$PKGFILE")"
+    srcfile="$(basename "$PKGFILE")"
+    if [ "$srcfile" == *:* ]; then
+        dest="$srcdir/${srcfile//:/.}"
+        mv "$PKGFILE" "$dest"
+        PKGFILE="$dest"
+    fi
+    set +x
 	# makepkg reports absolute paths, must be relative for use by other actions
 	RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 	# Caller arguments to makepkg may mean the pacakge is not built
