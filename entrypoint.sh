@@ -48,6 +48,17 @@ chmod -R a+rw .
 BASEDIR="$PWD"
 cd "${INPUT_PKGDIR:-.}"
 
+# Download the repository files if a repository tag has been specified
+# This is put here to fail early in case they weren't downloaded
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+    REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+    for REPOFILE in "${REPOFILES[@]}"; do
+        sudo -u builder curl -Lf -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
+    done
+    # Delete the `<repo_name>.db` and `repo_name.files` symlinks
+    rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
+fi
+
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
 # AUR checks that .SRCINFO exists so a missing file can't go unnoticed.
 if [ -f .SRCINFO ] && ! sudo -u builder makepkg --printsrcinfo | diff - .SRCINFO; then
@@ -80,16 +91,6 @@ sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 # Get array of packages to be built
 mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
-
-if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
-    REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
-    for REPOFILE in "${REPOFILES[@]}"; do
-        sudo -u builder curl -Lf -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE" \
-            || echo "Failed to retrieve $REPOFILE. A new repo will be created."
-    done
-    # Delete the `<repo_name>.db` and `repo_name.files` symlinks
-    rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
-fi
 
 # Report built package archives
 i=0
