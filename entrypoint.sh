@@ -27,7 +27,11 @@ if [ -n "${INPUT_MAKEPKGCONF:-}" ]; then
     cp "${INPUT_MAKEPKGCONF:-}" /etc/makepkg.conf
 fi
 
-pacman -Syu --noconfirm --needed base-devel
+pacman -Syu --noconfirm --needed base base-devel
+
+if [ "${INPUT_MULTILIB:-false}" == true ]; then
+    pacman -Syu --noconfirm --needed multilib-devel
+fi
 
 # Makepkg does not allow running as root
 # Create a new user `builder`
