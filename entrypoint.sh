@@ -48,15 +48,22 @@ chmod -R a+rw .
 BASEDIR="$PWD"
 cd "${INPUT_PKGDIR:-.}"
 
-# Download the repository files if a repository tag has been specified
-# This is put here to fail early in case they weren't downloaded
-if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+function download_database () {
+    # Download the repository files if a repository tag has been specified
+    # This is put here to fail early in case they weren't downloaded
     REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
     for REPOFILE in "${REPOFILES[@]}"; do
         sudo -u builder curl -Lf -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
     done
     # Delete the `<repo_name>.db` and `repo_name.files` symlinks
     rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
+}
+
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+    # Download database files to test for availability
+    download_database
+    # Delete them because they will be downloaded again
+    rm "${INPUT_REPORELEASETAG:-}".{db,files}.tar.gz
 fi
 
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
@@ -92,12 +99,16 @@ sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
 echo "Package(s): ${PKGFILES[*]}"
 
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+    # Download database files again in case another action updated them in the meantime
+    download_database
+fi
+
 # Report built package archives
 i=0
 for PKGFILE in "${PKGFILES[@]}"; do
     # Replace colon (:) in files name because releases don't like it
     # It seems to not mess with pacman so it doesn't need to be guarded
-    set -x
     srcdir="$(dirname "$PKGFILE")"
     srcfile="$(basename "$PKGFILE")"
     if [ "$srcfile" == *:* ]; then
@@ -105,7 +116,6 @@ for PKGFILE in "${PKGFILES[@]}"; do
         mv "$PKGFILE" "$dest"
         PKGFILE="$dest"
     fi
-    set +x
 	# makepkg reports absolute paths, must be relative for use by other actions
 	RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 	# Caller arguments to makepkg may mean the pacakge is not built
