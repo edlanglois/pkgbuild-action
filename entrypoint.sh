@@ -96,7 +96,8 @@ chown -R builder .
 sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 
 # Get array of packages to be built
-mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
+# shellcheck disable=SC2086
+mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist ${INPUT_MAKEPKGARGS:-})
 echo "Package(s): ${PKGFILES[*]}"
 
 if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
