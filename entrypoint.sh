@@ -53,7 +53,10 @@ function download_database () {
     # This is put here to fail early in case they weren't downloaded
     REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
     for REPOFILE in "${REPOFILES[@]}"; do
-        sudo -u builder curl -Lf -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
+        sudo -u builder curl \
+            --retry 5 --retry-delay 30 --retry-all-errors \
+            --location --fail \
+            -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
     done
     # Delete the `<repo_name>.db` and `repo_name.files` symlinks
     rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
