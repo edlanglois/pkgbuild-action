@@ -124,7 +124,7 @@ for PKGFILE in "${PKGFILES[@]}"; do
 	RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 	# Caller arguments to makepkg may mean the pacakge is not built
 	if [ -f "$PKGFILE" ]; then
-		echo "::set-output name=pkgfile$i::$RELPKGFILE"
+		echo "pkgfile$i=$RELPKGFILE" >> $GITHUB_OUTPUT
         # Optionally add the packages to a makeshift repository in GitHub releases
         if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
             sudo -u builder repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
@@ -147,7 +147,7 @@ if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
     j=0
     for REPOFILE in "${REPOFILES[@]}"; do
         RELREPOFILE="$(realpath --relative-base="$BASEDIR" "$(realpath -s "$REPOFILE")")"
-        echo "::set-output name=repofile$j::$RELREPOFILE"
+        echo "repofile$j=$RELREPOFILE" >> $GITHUB_OUTPUT
     (( ++j ))
     done
 fi
