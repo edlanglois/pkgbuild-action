@@ -49,7 +49,19 @@ outputs:
   pkgfile0:
     description: "Filename of the first generated package archive. Usually only one."
   pkgfile1:
-    description: "Filename of the 2nd generated package archive, etc."
+    description: "Filename of the 2nd generated package archive."
+  pkgfile2:
+    description: "Filename of the 3rd generated package archive."
+  pkgfile3:
+    description: "Filename of the 4th generated package archive. etc."
+  oldfile0:
+    description: "Filename of the first removed package archive. Usually only one."
+  oldfile1:
+    description: "Filename of the 2nd removed package archive."
+  oldfile2:
+    description: "Filename of the 3rd removed package archive."
+  oldfile3:
+    description: "Filename of the 4th removed package archive. etc."
   repofile0:
     description: "<repoReleaseTag>.db"
   repofile1:

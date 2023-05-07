@@ -18,19 +18,19 @@ EOM
 pacman-key --recv-keys 63CC496475267693
 
 if [ -n "${INPUT_PACMANCONF:-}" ]; then
-    echo "Using ${INPUT_PACMANCONF:-} as pacman.conf"
-    cp "${INPUT_PACMANCONF:-}" /etc/pacman.conf
+	echo "Using ${INPUT_PACMANCONF:-} as pacman.conf"
+	cp "${INPUT_PACMANCONF:-}" /etc/pacman.conf
 fi
 
 if [ -n "${INPUT_MAKEPKGCONF:-}" ]; then
-    echo "Using ${INPUT_MAKEPKGCONF:-} as makepkg.conf"
-    cp "${INPUT_MAKEPKGCONF:-}" /etc/makepkg.conf
+	echo "Using ${INPUT_MAKEPKGCONF:-} as makepkg.conf"
+	cp "${INPUT_MAKEPKGCONF:-}" /etc/makepkg.conf
 fi
 
 pacman -Syu --noconfirm --needed base base-devel
 
 if [ "${INPUT_MULTILIB:-false}" == true ]; then
-    pacman -Syu --noconfirm --needed multilib-devel
+	pacman -Syu --noconfirm --needed multilib-devel
 fi
 
 # Makepkg does not allow running as root
@@ -49,24 +49,24 @@ BASEDIR="$PWD"
 cd "${INPUT_PKGDIR:-.}"
 
 function download_database () {
-    # Download the repository files if a repository tag has been specified
-    # This is put here to fail early in case they weren't downloaded
-    REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
-    for REPOFILE in "${REPOFILES[@]}"; do
-        sudo -u builder curl \
-            --retry 5 --retry-delay 30 --retry-all-errors \
-            --location --fail \
-            -o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
-    done
-    # Delete the `<repo_name>.db` and `repo_name.files` symlinks
-    rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
+	# Download the repository files if a repository tag has been specified
+	# This is put here to fail early in case they weren't downloaded
+	REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+	for REPOFILE in "${REPOFILES[@]}"; do
+		sudo -u builder curl \
+			--retry 5 --retry-delay 30 --retry-all-errors \
+			--location --fail \
+			-o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
+	done
+	# Delete the `<repo_name>.db` and `repo_name.files` symlinks
+	rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
 }
 
 if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
-    # Download database files to test for availability
-    download_database
-    # Delete them because they will be downloaded again
-    rm "${INPUT_REPORELEASETAG:-}".{db,files}.tar.gz
+	# Download database files to test for availability
+	download_database
+	# Delete them because they will be downloaded again
+	rm "${INPUT_REPORELEASETAG:-}".{db,files}.tar.gz
 fi
 
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
@@ -104,33 +104,35 @@ mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist ${INPUT_MAKEPKGAR
 echo "Package(s): ${PKGFILES[*]}"
 
 if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
-    # Download database files again in case another action updated them in the meantime
-    download_database
+	# Download database files again in case another action updated them in the meantime
+	download_database
+	# Create package file list for the old database
+	zcat "${INPUT_REPORELEASETAG:-}".db.tar.gz | strings | grep '.pkg.tar.' | sort > old_db.packages
 fi
 
 # Report built package archives
 i=0
 for PKGFILE in "${PKGFILES[@]}"; do
-    # Replace colon (:) in files name because releases don't like it
-    # It seems to not mess with pacman so it doesn't need to be guarded
-    srcdir="$(dirname "$PKGFILE")"
-    srcfile="$(basename "$PKGFILE")"
-    if [ "$srcfile" == *:* ]; then
-        dest="$srcdir/${srcfile//:/.}"
-        mv "$PKGFILE" "$dest"
-        PKGFILE="$dest"
-    fi
+	# Replace colon (:) in files name because releases don't like it
+	# It seems to not mess with pacman so it doesn't need to be guarded
+	srcdir="$(dirname "$PKGFILE")"
+	srcfile="$(basename "$PKGFILE")"
+	if [[ "$srcfile" == *:* ]]; then
+		dest="$srcdir/${srcfile//:/.}"
+		mv "$PKGFILE" "$dest"
+		PKGFILE="$dest"
+	fi
 	# makepkg reports absolute paths, must be relative for use by other actions
 	RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 	# Caller arguments to makepkg may mean the pacakge is not built
 	if [ -f "$PKGFILE" ]; then
 		echo "pkgfile$i=$RELPKGFILE" >> $GITHUB_OUTPUT
-        # Optionally add the packages to a makeshift repository in GitHub releases
-        if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
-            sudo -u builder repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
-        else
-            echo "Skipping repository update for $RELPKGFILE"
-        fi
+		# Optionally add the packages to a makeshift repository in GitHub releases
+		if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+			sudo -u builder repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
+		else
+			echo "Skipping repository update for $RELPKGFILE"
+		fi
 	else
 		echo "Archive $RELPKGFILE not built"
 	fi
@@ -138,18 +140,25 @@ for PKGFILE in "${PKGFILES[@]}"; do
 done
 
 if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
-    # Delete the `<repo_name>.db` and `repo_name.files` symlinks
-    rm "${INPUT_REPORELEASETAG:-}".{db,files}
-    # Copy repo archives to their suffix-less symlinks because symlinks are not uploaded to GitHub releases
-    cp "${INPUT_REPORELEASETAG:-}".db{.tar.gz,}
-    cp "${INPUT_REPORELEASETAG:-}".files{.tar.gz,}
-    REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
-    j=0
-    for REPOFILE in "${REPOFILES[@]}"; do
-        RELREPOFILE="$(realpath --relative-base="$BASEDIR" "$(realpath -s "$REPOFILE")")"
-        echo "repofile$j=$RELREPOFILE" >> $GITHUB_OUTPUT
-    (( ++j ))
-    done
+	# Delete the `<repo_name>.db` and `repo_name.files` symlinks
+	rm "${INPUT_REPORELEASETAG:-}".{db,files}
+	# Copy repo archives to their suffix-less symlinks because symlinks are not uploaded to GitHub releases
+	cp "${INPUT_REPORELEASETAG:-}".db{.tar.gz,}
+	cp "${INPUT_REPORELEASETAG:-}".files{.tar.gz,}
+	REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+	j=0
+	for REPOFILE in "${REPOFILES[@]}"; do
+		RELREPOFILE="$(realpath --relative-base="$BASEDIR" "$(realpath -s "$REPOFILE")")"
+		echo "repofile$j=$RELREPOFILE" >> $GITHUB_OUTPUT
+		(( ++j ))
+	done
+	# List package files removed from the database
+	zcat "${INPUT_REPORELEASETAG:-}".db.tar.gz | strings | grep '.pkg.tar.' | sort > new_db.packages
+	k=0
+	for OLDFILE in $(diff {old,new}_db.packages | grep -E "^<" | cut -c3-);do
+		echo "oldfile$k=$OLDFILE" >> $GITHUB_OUTPUT
+		(( ++k ))
+	done
 fi
 
 function prepend () {
