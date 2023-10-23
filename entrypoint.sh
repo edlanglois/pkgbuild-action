@@ -28,6 +28,8 @@ if [ -n "${INPUT_MAKEPKGCONF:-}" ]; then
 fi
 
 pacman -Syu --noconfirm --needed base base-devel
+pacman -Syu --noconfirm --needed ccache
+#pacman -Syu --noconfirm --needed ccache-ext
 
 if [ "${INPUT_MULTILIB:-false}" == true ]; then
 	pacman -Syu --noconfirm --needed multilib-devel
