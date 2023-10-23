@@ -31,8 +31,6 @@ pacman -Syu --noconfirm --needed base base-devel
 pacman -Syu --noconfirm --needed ccache
 #pacman -Syu --noconfirm --needed ccache-ext
 
-export CCACHE_DIR="./.ccache"
-
 if [ "${INPUT_MULTILIB:-false}" == true ]; then
 	pacman -Syu --noconfirm --needed multilib-devel
 fi
@@ -100,7 +98,7 @@ chown -R builder .
 # Build packages
 # INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
 # shellcheck disable=SC2086
-sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
+sudo -H -u builder CCACHE_DIR="$BASEDIR/.ccache" makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 
 # Get array of packages to be built
 # shellcheck disable=SC2086
