@@ -9,7 +9,31 @@ cat << EOM >> /etc/pacman.conf
 Include = /etc/pacman.d/mirrorlist
 EOM
 
-pacman -Syu --noconfirm --needed base-devel
+# Add alerque repository for paru
+cat << EOM >> /etc/pacman.conf
+[alerque]
+SigLevel = Optional TrustAll
+Server = https://arch.alerque.com/\$arch
+EOM
+pacman-key --recv-keys 63CC496475267693
+
+if [ -n "${INPUT_PACMANCONF:-}" ]; then
+	echo "Using ${INPUT_PACMANCONF:-} as pacman.conf"
+	cp "${INPUT_PACMANCONF:-}" /etc/pacman.conf
+fi
+
+if [ -n "${INPUT_MAKEPKGCONF:-}" ]; then
+	echo "Using ${INPUT_MAKEPKGCONF:-} as makepkg.conf"
+	cp "${INPUT_MAKEPKGCONF:-}" /etc/makepkg.conf
+fi
+
+pacman -Syu --noconfirm --needed base base-devel
+pacman -Syu --noconfirm --needed ccache
+#pacman -Syu --noconfirm --needed ccache-ext
+
+if [ "${INPUT_MULTILIB:-false}" == true ]; then
+	pacman -Syu --noconfirm --needed multilib-devel
+fi
 
 # Makepkg does not allow running as root
 # Create a new user `builder`
@@ -26,6 +50,27 @@ chmod -R a+rw .
 BASEDIR="$PWD"
 cd "${INPUT_PKGDIR:-.}"
 
+function download_database () {
+	# Download the repository files if a repository tag has been specified
+	# This is put here to fail early in case they weren't downloaded
+	REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+	for REPOFILE in "${REPOFILES[@]}"; do
+		sudo -u builder curl \
+			--retry 5 --retry-delay 30 --retry-all-errors \
+			--location --fail \
+			-o "$REPOFILE" "$GITHUB_SERVER_URL"/"$GITHUB_REPOSITORY"/releases/download/"${INPUT_REPORELEASETAG:-}"/"$REPOFILE"
+	done
+	# Delete the `<repo_name>.db` and `repo_name.files` symlinks
+	rm "${INPUT_REPORELEASETAG:-}".{db,files} || true
+}
+
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+	# Download database files to test for availability
+	download_database
+	# Delete them because they will be downloaded again
+	rm "${INPUT_REPORELEASETAG:-}".{db,files}.tar.gz
+fi
+
 # Assume that if .SRCINFO is missing then it is generated elsewhere.
 # AUR checks that .SRCINFO exists so a missing file can't go unnoticed.
 if [ -f .SRCINFO ] && ! sudo -u builder makepkg --printsrcinfo | diff - .SRCINFO; then
@@ -35,18 +80,13 @@ fi
 
 # Optionally install dependencies from AUR
 if [ -n "${INPUT_AURDEPS:-}" ]; then
-	# First install yay
-	pacman -S --noconfirm --needed git
-	git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
-	pushd /tmp/yay
-	chmod -R a+rw .
-	sudo -H -u builder makepkg --syncdeps --install --noconfirm
-	popd
+	# First install paru
+	pacman -Syu --noconfirm paru
 
 	# Extract dependencies from .SRCINFO (depends or depends_x86_64) and install
 	mapfile -t PKGDEPS < \
 		<(sed -n -e 's/^[[:space:]]*\(make\)\?depends\(_x86_64\)\? = \([[:alnum:][:punct:]]*\)[[:space:]]*$/\3/p' .SRCINFO)
-	sudo -H -u builder yay --sync --noconfirm "${PKGDEPS[@]}"
+	sudo -H -u builder paru --sync --noconfirm "${PKGDEPS[@]}"
 fi
 
 # Make the builder user the owner of these files
@@ -58,25 +98,70 @@ chown -R builder .
 # Build packages
 # INPUT_MAKEPKGARGS is intentionally unquoted to allow arg splitting
 # shellcheck disable=SC2086
-sudo -H -u builder makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
+sudo -H -u builder CCACHE_DIR="$BASEDIR/.ccache" makepkg --syncdeps --noconfirm ${INPUT_MAKEPKGARGS:-}
 
 # Get array of packages to be built
-mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist )
+# shellcheck disable=SC2086
+mapfile -t PKGFILES < <( sudo -u builder makepkg --packagelist ${INPUT_MAKEPKGARGS:-})
 echo "Package(s): ${PKGFILES[*]}"
+
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+	# Download database files again in case another action updated them in the meantime
+	download_database
+	# Create package file list for the old database
+	zcat "${INPUT_REPORELEASETAG:-}".db.tar.gz | strings | grep '.pkg.tar.' | sort > old_db.packages
+fi
 
 # Report built package archives
 i=0
 for PKGFILE in "${PKGFILES[@]}"; do
+	# Replace colon (:) in files name because releases don't like it
+	# It seems to not mess with pacman so it doesn't need to be guarded
+	srcdir="$(dirname "$PKGFILE")"
+	srcfile="$(basename "$PKGFILE")"
+	if [[ "$srcfile" == *:* ]]; then
+		dest="$srcdir/${srcfile//:/.}"
+		mv "$PKGFILE" "$dest"
+		PKGFILE="$dest"
+	fi
 	# makepkg reports absolute paths, must be relative for use by other actions
 	RELPKGFILE="$(realpath --relative-base="$BASEDIR" "$PKGFILE")"
 	# Caller arguments to makepkg may mean the pacakge is not built
 	if [ -f "$PKGFILE" ]; then
-		echo "::set-output name=pkgfile$i::$RELPKGFILE"
+		echo "pkgfile$i=$RELPKGFILE" >> $GITHUB_OUTPUT
+		# Optionally add the packages to a makeshift repository in GitHub releases
+		if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+			sudo -u builder repo-add "${INPUT_REPORELEASETAG:-}".db.tar.gz "$(basename "$PKGFILE")"
+		else
+			echo "Skipping repository update for $RELPKGFILE"
+		fi
 	else
 		echo "Archive $RELPKGFILE not built"
 	fi
 	(( ++i ))
 done
+
+if [ -n "${INPUT_REPORELEASETAG:-}" ]; then
+	# Delete the `<repo_name>.db` and `repo_name.files` symlinks
+	rm "${INPUT_REPORELEASETAG:-}".{db,files}
+	# Copy repo archives to their suffix-less symlinks because symlinks are not uploaded to GitHub releases
+	cp "${INPUT_REPORELEASETAG:-}".db{.tar.gz,}
+	cp "${INPUT_REPORELEASETAG:-}".files{.tar.gz,}
+	REPOFILES=("${INPUT_REPORELEASETAG:-}".{db{,.tar.gz},files{,.tar.gz}})
+	j=0
+	for REPOFILE in "${REPOFILES[@]}"; do
+		RELREPOFILE="$(realpath --relative-base="$BASEDIR" "$(realpath -s "$REPOFILE")")"
+		echo "repofile$j=$RELREPOFILE" >> $GITHUB_OUTPUT
+		(( ++j ))
+	done
+	# List package files removed from the database
+	zcat "${INPUT_REPORELEASETAG:-}".db.tar.gz | strings | grep '.pkg.tar.' | sort > new_db.packages
+	k=0
+	for OLDFILE in $(diff {old,new}_db.packages | grep -E "^<" | cut -c3-);do
+		echo "oldfile$k=$OLDFILE" >> $GITHUB_OUTPUT
+		(( ++k ))
+	done
+fi
 
 function prepend () {
 	# Prepend the argument to each input line

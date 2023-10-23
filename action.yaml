@@ -9,6 +9,10 @@ inputs:
     description: "Relative path to directory containing the PKGBUILD file."
     required: false
     default: "."
+  pacmanConf:
+    description: "Relative path to alternative configuration file for pacman."
+    required: false
+    default: "/etc/pacman.conf"
   aurDeps:
     description: "Support AUR dependencies if nonempty."
     required: false
@@ -29,11 +33,43 @@ inputs:
     description: "Additional arguments to pass to makepkg."
     required: false
     default: ""
+  makepkgConf:
+    description: "Relative path to alternative configuration file for makepkg."
+    required: false
+    default: "/etc/makepkg.conf"
+  multilib:
+    description: "Install 'multilib-devel' to build lib32 packages."
+    required: false
+    default: false
+  repoReleaseTag:
+    description: "Tag to use as repository name."
+    required: false
+    default: ""
 outputs:
   pkgfile0:
     description: "Filename of the first generated package archive. Usually only one."
   pkgfile1:
-    description: "Filename of the 2nd generated package archive, etc."
+    description: "Filename of the 2nd generated package archive."
+  pkgfile2:
+    description: "Filename of the 3rd generated package archive."
+  pkgfile3:
+    description: "Filename of the 4th generated package archive. etc."
+  oldfile0:
+    description: "Filename of the first removed package archive. Usually only one."
+  oldfile1:
+    description: "Filename of the 2nd removed package archive."
+  oldfile2:
+    description: "Filename of the 3rd removed package archive."
+  oldfile3:
+    description: "Filename of the 4th removed package archive. etc."
+  repofile0:
+    description: "<repoReleaseTag>.db"
+  repofile1:
+    description: "<repoReleaseTag>.db.tar.gz"
+  repofile2:
+    description: "<repoReleaseTag>.files"
+  repofile3:
+    description: "<repoReleaseTag>.files.tar.gz"
 runs:
   using: 'docker'
   image: 'Dockerfile'
