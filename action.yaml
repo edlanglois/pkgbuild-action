@@ -1,4 +1,4 @@
-name: Makepkg Build and Check
+name: Makepkg Build and Check (Unmaintained)
 author: Eric Langlois
 description: Build and check a PKGBUILD package
 branding:
