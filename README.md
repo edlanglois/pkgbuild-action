@@ -1,6 +1,8 @@
 # pkgbuild-action
 GitHub action to build and check a PKGBUILD package
 
+This project is mostly unmaintained for now. Fix PRs are still welcome.
+
 ## Features
 * Checks that .SRCINFO matches PKGBUILD if .SRCINFO exists
 * Builds package(s) with makepkg (configurable arguments)
